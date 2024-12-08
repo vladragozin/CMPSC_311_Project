@@ -15,33 +15,40 @@
 
 int sockTable[10];
 
-void writeAll(char msg[], int size)
+void writeAll(char msg[], int size, int ogsocket)
 {
+    int pn;
 	printf("msg: %s\n", msg);
 	for (int i = 4; i < size; i++)
 	{
-		write(i, msg, size);
+
+        printf("%d\n ",ogsocket);
+        printf("%d\n ",i);
+	    if(ogsocket!=i){
+            write(i, msg, size);
+	    }
 	}
 }
 
 static void * readSockFd(void* arg)
 {
 	int *clisockfd = (int *) arg;
-	
+
 	printf("now reading socket fd %d\n", *clisockfd);
-	
+
 	for (;;)
     {
         char string[MAX_SIZE];
+        char msg[MAX_SIZE+6];
 		int len;
 
 		//6. READ MESSAGE
         /* read message from client*/
         //read newsockfd into string
         len = read(*clisockfd, string, MAX_SIZE);
-		
+
 		//printf("len: %d\n", len);
-		
+
 		if(len <= 0)
 		{
 			printf("User %d has disconnected\n", *clisockfd);
@@ -53,11 +60,19 @@ static void * readSockFd(void* arg)
 		{
 			/* make sure its a proper string */
 			string[len] = 0;
-			printf("%s\n", string);
-			
+			if(*clisockfd<10){
+			sprintf(msg, "User 0%d: ", *clisockfd);
+			}
+			else{
+            sprintf(msg, "User %d: ", *clisockfd);
+			}
+			strcat(msg,string);
+			printf("%s\n", msg);
+
+
 			//send message to other clients
-			printf("sending message to other clients \n");				
-			writeAll(string, sizeof(string));
+			printf("sending message to other clients \n");
+			writeAll(msg, sizeof(string),*clisockfd);
 		}
     }
 }
@@ -70,7 +85,7 @@ int main(int argc, char *argv[])
     char string[MAX_SIZE];
     int len;
     int opt = 1;
-	
+
     /* command line: server [port_number]*/
 
     //1. CHOOSING PORT
@@ -80,7 +95,7 @@ int main(int argc, char *argv[])
     else
         //if port is not provided, use port 23
         port = SERV_TCP_PORT;
-	
+
 	printf("Selected port: %d \n", port);
 
 
@@ -96,7 +111,7 @@ int main(int argc, char *argv[])
         perror("setsockopt");
         exit(1);
     }
-	
+
 	printf("opened socket: %d \n" , sockfd);
 
     //3. BINDING ADDRESS
@@ -128,7 +143,7 @@ int main(int argc, char *argv[])
 		clilen = sizeof(cli_addr);
 		clisockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
 		sockTable[sockfd] = sockfd;
-		
+
 		printf("User %d has joined\n", clisockfd);
 
 		//separate thread waits for messages from the client socket
@@ -138,12 +153,12 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 		*arg = clisockfd;
-		
+
 		s = pthread_create(&thread1, NULL, readSockFd, arg);
-		
+
 		if (s != 0)
 		{
 			perror("Thread create error");
-		}	
+		}
 	}
 }

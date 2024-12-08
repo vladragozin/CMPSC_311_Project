@@ -15,16 +15,16 @@
 #define MAX_SIZE 80
 
 static void* readSockFd(void *arg)
-{	
+{
 	int *sockfd = (int *) arg;
-		
+
 	for(;;)
 	{
 		char buf[MAX_SIZE];
 		int len;
-		
+
 		len = read(*sockfd, buf, MAX_SIZE);
-		
+
 		if (len <= 0)
 		{
 			perror("The server shut down");
@@ -32,7 +32,11 @@ static void* readSockFd(void *arg)
 		}
 		else{
 			buf[len] = 0;
+            printf("\x1b[2K"); // Clear entire line
+            printf("\r"); // Move the cursor to the beginning of the line
 			printf("%s", buf);
+            printf(" Write message here: ");
+            fflush(stdout);
 		}
 	}
 }
@@ -50,11 +54,11 @@ int main(int argc, char *argv[])
 	pthread_t thread1;
 
     /* command line: client [host [port]]*/
-  
+
 	//1. get host
 	if(argc >= 2)
         serv_host = argv[1]; /* read the host if provided */
-	
+
 	printf("selected host: %s \n", serv_host);
 
 	//2. get port
@@ -83,7 +87,7 @@ int main(int argc, char *argv[])
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = ((struct in_addr *)host_ptr->h_addr_list[0])->s_addr;
     serv_addr.sin_port = htons(port);
-	
+
     //5. open a TCP socket
     if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -100,8 +104,8 @@ int main(int argc, char *argv[])
         perror("can't connect to server");
         exit(1);
     }
-	
-	
+
+
 	//separate thread waits for messages from the client socket
 	//allocate memory
 	printf("attempting to create thread: %d\n", sockfd);
@@ -112,21 +116,24 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	*arg = sockfd;
-	
+
 	//create thread
 	s = pthread_create(&thread1, NULL, readSockFd, arg);
 	if (s != 0)
 	{
 		perror("Thread create error");
-	}	
+	}
 
-    //writing messages to server 
+    //writing messages to server
 	for(;;)
 	{
 		char msg[MAX_SIZE];
-		
-		printf("Write message here: ");
+
+		printf(" Write message here: ");
 		fgets(msg, sizeof(msg), stdin);
+        //printf("\033[2K");
+        //printf("\r"); // Move the cursor to the beginning of the line
+        //printf("You: %s",msg);
 		write(sockfd, msg, sizeof(msg));
 	}
 }
