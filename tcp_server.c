@@ -12,7 +12,8 @@
 
 #define SERV_TCP_PORT 23 // server's port number
 #define MAX_SIZE 80
-
+//compile with -lpthread
+//use sudo when running
 int sockTable[10];
 
 void writeAll(char msg[], int size, int ogsocket)

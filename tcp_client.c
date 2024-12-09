@@ -13,7 +13,8 @@
 
 #define SERV_TCP_PORT 23 /* server's port */
 #define MAX_SIZE 80
-
+//compile with -lpthread
+//use sudo when running
 static void* readSockFd(void *arg)
 {
 	int *sockfd = (int *) arg;
