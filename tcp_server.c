@@ -17,13 +17,10 @@ int sockTable[10];
 
 void writeAll(char msg[], int size, int ogsocket)
 {
-    int pn;
 	printf("msg: %s\n", msg);
 	for (int i = 4; i < size; i++)
 	{
 
-        printf("%d\n ",ogsocket);
-        printf("%d\n ",i);
 	    if(ogsocket!=i){
             write(i, msg, size);
 	    }
@@ -33,13 +30,14 @@ void writeAll(char msg[], int size, int ogsocket)
 static void * readSockFd(void* arg)
 {
 	int *clisockfd = (int *) arg;
-
+    bool unnamed =true;
 	printf("now reading socket fd %d\n", *clisockfd);
 
 	for (;;)
     {
         char string[MAX_SIZE];
-        char msg[MAX_SIZE+6];
+        char msg[MAX_SIZE+(MAX_SIZE/4)+3];
+        char name[MAX_SIZE/4];
 		int len;
 
 		//6. READ MESSAGE
@@ -56,16 +54,17 @@ static void * readSockFd(void* arg)
 			close(*clisockfd);
 			pthread_exit(0);
 		}
+		if(unnamed){
+         strncpy(name, string, strlen(string)-1);
+         unnamed=false;
+		}
 		else
 		{
 			/* make sure its a proper string */
 			string[len] = 0;
-			if(*clisockfd<10){
-			sprintf(msg, "User 0%d: ", *clisockfd);
-			}
-			else{
-            sprintf(msg, "User %d: ", *clisockfd);
-			}
+
+            sprintf(msg, "%s: ", name);
+
 			strcat(msg,string);
 			printf("%s\n", msg);
 

@@ -28,14 +28,14 @@ static void* readSockFd(void *arg)
 		if (len <= 0)
 		{
 			perror("The server shut down");
-			return 0;
+			exit(0);
 		}
 		else{
 			buf[len] = 0;
             printf("\x1b[2K"); // Clear entire line
             printf("\r"); // Move the cursor to the beginning of the line
 			printf("%s", buf);
-            printf(" Write message here: ");
+            printf(" You: ");
             fflush(stdout);
 		}
 	}
@@ -117,23 +117,33 @@ int main(int argc, char *argv[])
 	}
 	*arg = sockfd;
 
-	//create thread
+
+
+    // first message sent to server is name
+    char name[MAX_SIZE/4];
+    printf(" enter name: ");
+    fgets(name, sizeof(name), stdin);
+    write(sockfd, name, sizeof(name));
+
+    //create thread
 	s = pthread_create(&thread1, NULL, readSockFd, arg);
 	if (s != 0)
 	{
 		perror("Thread create error");
 	}
-
     //writing messages to server
+    printf("input !close! to close!\n");
 	for(;;)
 	{
 		char msg[MAX_SIZE];
-
-		printf(" Write message here: ");
+		printf(" You: ");
 		fgets(msg, sizeof(msg), stdin);
-        //printf("\033[2K");
-        //printf("\r"); // Move the cursor to the beginning of the line
-        //printf("You: %s",msg);
+		if(strcmp(msg,"!close!\n")==0){
+            close(sockfd);
+            return 0;
+		}
+		else{
 		write(sockfd, msg, sizeof(msg));
+        }
 	}
 }
